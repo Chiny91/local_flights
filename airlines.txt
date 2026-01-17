@@ -15,29 +15,38 @@ DAL,Delta Air Lines
 DLH,Lufthansa
 EAG,Emerald Airlines
 EAI,Emerald Airlines
+ECA,Euro Cargo Aviation
 EIN,Aer Lingus
 EJU,easyJet
+EMC,247 Aviation
 EXS,Jet2
 EZE,Eastern Airways
+EZS,Easyjet Switzerland
 EZY,easyJet
 FDX,FedEx Express
 FPO,ASL Airlines France
+HM,Air Seychelles
 ICE,Icelandair
 ITY,ITA Airways
 JBU,JetBlue
 KLC,KLM Cityhopper
 KLM,KLM
+LDG,Leading Edge Aviation
 LDX,SPARFELL Luftfahrt
 LOG,Loganair
+LXJ,Flexjet
+NJE,National Jet Express
 NOZ,Norwegian Air Shuttle
 NPT,Atlantic Airlines
 NSZ,Norwegian Air Sweden
 OCN,O Air
+PGC,European Aircraft Private Club
 PGT,Pegasus Airlines
 PYN,Fly Wales
 RRR,RAF Air Transport
 RUK,Ryanair UK
 RYR,Ryanair
+SAH,Smart Jet
 SAS,SAS
 SFY,Skyborne Academy
 SHT,British Airways
@@ -59,5 +68,7 @@ UPS,UPS Airlines
 VIR,Virgin Atlantic
 VJH,VistaJet
 VJT,VistaJet
+VLG,Vueling Airlines
 VOE,Volotea
+WMT,Wizz Air Malta
 WZZ,Wizz Air
