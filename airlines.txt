@@ -1,0 +1,63 @@
+AAL,American Airlines
+ACA,Air Canada
+AFR,Air France
+AIC,Air India
+AMX,Aeromexico
+ANN,Atmospherica Aviation
+AUR,Aurigny
+BAW,British Airways
+BEE,Flybe
+BMR,bmi regional
+BOX,AeroLogic
+CFG,Condor Flugdienst
+CLX,Cargolux
+DAL,Delta Air Lines
+DLH,Lufthansa
+EAG,Emerald Airlines
+EAI,Emerald Airlines
+EIN,Aer Lingus
+EJU,easyJet
+EXS,Jet2
+EZE,Eastern Airways
+EZY,easyJet
+FDX,FedEx Express
+FPO,ASL Airlines France
+ICE,Icelandair
+ITY,ITA Airways
+JBU,JetBlue
+KLC,KLM Cityhopper
+KLM,KLM
+LDX,SPARFELL Luftfahrt
+LOG,Loganair
+NOZ,Norwegian Air Shuttle
+NPT,Atlantic Airlines
+NSZ,Norwegian Air Sweden
+OCN,O Air
+PGT,Pegasus Airlines
+PYN,Fly Wales
+RRR,RAF Air Transport
+RUK,Ryanair UK
+RYR,Ryanair
+SAS,SAS
+SFY,Skyborne Academy
+SHT,British Airways
+SIA,Singapore Airlines
+SRD,Sundair
+SRR,Maersk Air Cargo
+SWR,Swiss International
+SXS,SunExpress
+TAP,TAP Portugal
+THY,Turkish Airlines
+TOM,TUI
+TOW,Tower Air
+TSC,Air Transat
+TUI,TUI
+TVF,Transavia France
+UAE,Emirates
+UAL,United Airlines
+UPS,UPS Airlines
+VIR,Virgin Atlantic
+VJH,VistaJet
+VJT,VistaJet
+VOE,Volotea
+WZZ,Wizz Air
