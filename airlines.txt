@@ -9,9 +9,11 @@ BAW,British Airways
 BEE,Flybe
 BMR,bmi regional
 BOX,AeroLogic
+BTI,Air Baltic
 CFG,Condor Flugdienst
 CLX,Cargolux
 DAL,Delta Air Lines
+DHK,DHL Air
 DLH,Lufthansa
 EAG,Emerald Airlines
 EAI,Emerald Airlines
@@ -19,13 +21,17 @@ ECA,Euro Cargo Aviation
 EIN,Aer Lingus
 EJU,easyJet
 EMC,247 Aviation
+ETH,Ethiopian Airlines
 EXS,Jet2
 EZE,Eastern Airways
 EZS,Easyjet Switzerland
 EZY,easyJet
 FDX,FedEx Express
 FPO,ASL Airlines France
+GTI,Atlas Air
+HGO,One Air
 HM,Air Seychelles
+IBE,Iberia Airlines
 ICE,Icelandair
 ITY,ITA Airways
 JBU,JetBlue
@@ -42,7 +48,10 @@ NSZ,Norwegian Air Sweden
 OCN,O Air
 PGC,European Aircraft Private Club
 PGT,Pegasus Airlines
+PIA,Pakistan Int Airlines
 PYN,Fly Wales
+QTR,Qatar Airways
+RAM,Royal Air Maroc
 RRR,RAF Air Transport
 RUK,Ryanair UK
 RYR,Ryanair
@@ -72,3 +81,9 @@ VLG,Vueling Airlines
 VOE,Volotea
 WMT,Wizz Air Malta
 WZZ,Wizz Air
+
+BEL,Brussels Airlines
+WJA,WestJetHN,Air Seychelles
+
+CND,Aero Continente Dominicana
+SLM,Surinam Airways

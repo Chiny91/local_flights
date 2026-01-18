@@ -15,7 +15,6 @@ from rich.panel import Panel
 from rich.layout import Layout
 from datetime import datetime
 import threading
-
 class KeyListener:
     """Context manager for non-blocking keyboard input."""
     def __enter__(self):
@@ -56,6 +55,7 @@ CONFIG = {
     "col_callsign": "bold cyan",
     "col_flag": "white",
     "col_airline": "bold green",
+    "col_type": "bold yellow",
     "col_route": "cyan",
     "col_dist": "white",
     "col_alt": "yellow",
@@ -66,6 +66,7 @@ CONFIG = {
 
 AIRLINES = {}
 ROUTES = {}
+AIRCRAFT_TYPES = {}
 PENDING_LOOKUPS = set()
 
 def load_config():
@@ -125,6 +126,7 @@ def save_config():
             f.write(f"col_callsign={CONFIG['col_callsign']}\n")
             f.write(f"col_flag={CONFIG['col_flag']}\n")
             f.write(f"col_airline={CONFIG['col_airline']}\n")
+            f.write(f"col_type={CONFIG['col_type']}\n")
             f.write(f"col_route={CONFIG['col_route']}\n")
             f.write(f"col_dist={CONFIG['col_dist']}\n")
             f.write(f"col_alt={CONFIG['col_alt']}\n")
@@ -145,6 +147,37 @@ def fetch_flight_data(url):
         return data.get("aircraft", [])
     except requests.RequestException as e:
         return None
+
+def fetch_type_thread(hex_code):
+    """
+    Background thread to fetch aircraft type from api.adsbdb.com
+    """
+    global AIRCRAFT_TYPES, PENDING_LOOKUPS
+    url = f"https://api.adsbdb.com/v0/aircraft/{hex_code}"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            ac = data.get("response", {}).get("aircraft", {})
+            
+            icao_type = ac.get("icao_type")
+            
+            if icao_type:
+                AIRCRAFT_TYPES[hex_code] = icao_type
+                
+                # Persist to aircraft_types.txt
+                file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "aircraft_types.txt")
+                try:
+                    with open(file_path, "a") as f:
+                        f.write(f"\n{hex_code},{icao_type}")
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    finally:
+        key = f"HEX:{hex_code}"
+        if key in PENDING_LOOKUPS:
+            PENDING_LOOKUPS.remove(key)
 
 def fetch_route_thread(callsign):
     """
@@ -220,12 +253,12 @@ def generate_table(flights, source_url, max_rows=10):
     """
     Generates a Rich Table with flight data from dump1090.
     """
-    # Simply "Flight Tracker" as requested
     table = Table(title=f"Flight Tracker: {LOCATION_NAME}", box=box.HORIZONTALS)
 
-    table.add_column("Call Sign", style=CONFIG["col_callsign"], width=10)
-    table.add_column("Flag", style=CONFIG["col_flag"], justify="center", width=5)
+    table.add_column("Callsign", style=CONFIG["col_callsign"], width=10)
+    table.add_column("Ctry", style=CONFIG["col_flag"], justify="center", width=4)
     table.add_column("Airline", style=CONFIG["col_airline"], justify="left", width=24)
+    table.add_column("Type", style=CONFIG["col_type"], justify="left", width=8)
     table.add_column("Route", style=CONFIG["col_route"], justify="left", width=10)
     table.add_column("Heading", justify="right", style=CONFIG["col_heading"])
     table.add_column("Dist (nm)", justify="right", style=CONFIG["col_dist"], width=6)
@@ -254,7 +287,7 @@ def generate_table(flights, source_url, max_rows=10):
         for f, dist in nearest_flights:
             callsign = f.get("flight", "").strip()
             if not callsign:
-                callsign = "-"
+                callsign = ""
             
             hex_code = f.get("hex", "").upper()
             flag = get_flag(hex_code)
@@ -265,16 +298,28 @@ def generate_table(flights, source_url, max_rows=10):
             
             missing_data = False
             if not route:
-                route = "?"
+                route = ""
                 missing_data = True
             
             if not airline:
                 missing_data = True
 
             # Trigger background lookup if missing data and not pending
-            if missing_data and callsign != "-" and callsign not in PENDING_LOOKUPS:
+            if missing_data and callsign and callsign not in PENDING_LOOKUPS:
                 PENDING_LOOKUPS.add(callsign)
                 threading.Thread(target=fetch_route_thread, args=(callsign,), daemon=True).start()
+
+            # Aircraft Type Lookup
+            hex_code = f.get("hex", "").upper()
+            aircraft_type = AIRCRAFT_TYPES.get(hex_code)
+            
+            if not aircraft_type:
+                aircraft_type = ""
+                # Trigger hex lookup if not pending
+                key = f"HEX:{hex_code}"
+                if hex_code and key not in PENDING_LOOKUPS:
+                    PENDING_LOOKUPS.add(key)
+                    threading.Thread(target=fetch_type_thread, args=(hex_code,), daemon=True).start()
 
             if dist == float('inf'):
                 dist_str = "-"
@@ -300,6 +345,7 @@ def generate_table(flights, source_url, max_rows=10):
                 callsign,
                 flag,
                 airline,
+                aircraft_type,
                 route,
                 track,
                 dist_str,
@@ -313,16 +359,23 @@ def generate_table(flights, source_url, max_rows=10):
 def get_airline(callsign):
     """
     Deduces airline name from callsign prefix.
+    Checks for 3-letter ICAO code first, then 2-letter IATA code.
     """
-    if not callsign or len(callsign) < 3:
+    if not callsign or len(callsign) < 2:
         return ""
     
-    # Extract first 3 letters
-    prefix = callsign[:3].upper()
-    
-    
     global AIRLINES
-    return AIRLINES.get(prefix, "")
+    
+    # 1. Try 3-letter ICAO
+    if len(callsign) >= 3:
+        prefix3 = callsign[:3].upper()
+        name = AIRLINES.get(prefix3)
+        if name:
+            return name
+            
+    # 2. Try 2-letter IATA
+    prefix2 = callsign[:2].upper()
+    return AIRLINES.get(prefix2, "")
 
 def load_airlines():
     """
@@ -415,55 +468,81 @@ def load_routes():
         except Exception as e:
             print(f"Error loading routes.txt: {e}")
 
+def load_aircraft_types():
+    """
+    Loads aircraft types from aircraft_types.txt.
+    Expected format: HEX,TYPE
+    """
+    global AIRCRAFT_TYPES
+    AIRCRAFT_TYPES = {}
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "aircraft_types.txt")
+    
+    if os.path.exists(file_path):
+        try:
+            with open(file_path, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#"):
+                        continue
+                    if "," in line:
+                        parts = line.split(",")
+                        if len(parts) >= 2:
+                            hex_code = parts[0].strip().upper()
+                            atype = parts[1].strip()
+                            AIRCRAFT_TYPES[hex_code] = atype
+        except Exception as e:
+            print(f"Error loading aircraft_types.txt: {e}")
+
 def get_flag(hex_code):
     """
-    Returns a country flag emoji based on ICAO 24-bit hex code.
-    This is a simplified mapping for common ranges in Europe/UK.
+    Returns a country ISO code based on ICAO 24-bit hex code.
+    Replaces Emojis to guarantee perfect terminal alignment.
     """
     try:
+        # Fallback is 2 spaces
         if not hex_code:
-            return "🇪🇺"
+            return "  "
         
-        # Convert hex to integer for comparison if needed, but string prefix match is easier for simple logic
         # UK: 400000 - 43FFFF
         if hex_code.startswith(("40", "41", "42", "43")):
-            return "🇬🇧"
+            return "GB"
         # Ireland: 4CA... (approx range starts with 4C)
         elif hex_code.startswith("4C"):
-            return "🇮🇪"
+            return "IE"
         # France: 380000 - 3BFFFF
         elif hex_code.startswith(("38", "39", "3A", "3B")):
-            return "🇫🇷"
+            return "FR"
         # Germany: 3C0000 - 3DFFFF
         elif hex_code.startswith(("3C", "3D")):
-            return "🇩🇪"
+            return "DE"
         # USA: A00000 - AFFFFF
         elif hex_code.startswith("A"):
-            return "🇺🇸"
+            return "US"
         # Netherlands: 48xxxx
         elif hex_code.startswith("48"):
-            return "🇳🇱"
+            return "NL"
         # Belgium: 44xxxx
         elif hex_code.startswith("44"):
-            return "🇧🇪"
+            return "BE"
         # Spain: 34xxxx
         elif hex_code.startswith("34"):
-            return "🇪🇸"
+            return "ES"
         # Italy: 30xxxx
         elif hex_code.startswith("30"):
-            return "🇮🇹"
+            return "IT"
         # Portugal: 49xxxx
         elif hex_code.startswith("49"):
-            return "🇵🇹"
+            return "PT"
         # Poland: 48xxxx clashes with NL? Wait. 
         # Netherlands: 480000-487FFF. Poland: 488000-48FFFF.
         # Let's simple check 488+
         elif hex_code.startswith("48") and hex_code > "487FFF":
-             return "🇵🇱"
+             return "PL"
         
-        return "🇪🇺"
+        return "  "
+
     except:
-        return "🇪🇺"
+        return "  "
 
 
 
@@ -474,6 +553,7 @@ def main():
     load_config()
     load_airlines()
     load_routes()
+    load_aircraft_types()
 
     parser = argparse.ArgumentParser(description="dump1090-fa Flight Tracker")
     parser.add_argument("--url", default=None, help=f"URL to aircraft.json")
